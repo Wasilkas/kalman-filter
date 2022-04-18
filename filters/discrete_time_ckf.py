@@ -1,11 +1,8 @@
 import numpy.linalg as npl
-import math
-from model import *
+from models import *
 
 
 class DiscreteTimeCKF:
-    y = 0
-
     def __init__(self, n, m, p0, r0, q0, x0):
         self.n = n
         self.m = m
