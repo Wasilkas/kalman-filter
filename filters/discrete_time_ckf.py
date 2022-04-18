@@ -22,19 +22,20 @@ class DiscreteTimeCKF:
         chi_predict = np.zeros(shape=(2*self.n, self.n))
         chol_p = npl.cholesky(self.p)
         x_prev = self.x[:]
-        self.x = np.zeros(shape=(self.n, 1))
+        self.x = np.zeros(shape=(self.n, ))
         self.p = np.zeros(shape=(self.n, self.n))
 
         for i in range(2 * self.n):
             chi_predict[i] = evaluate_f(x_prev + chol_p @ np.transpose(self.xi[i]))
+            a = chi_predict[i] / (2 * self.n)
             self.x += chi_predict[i] / (2 * self.n)
 
         for i in range(2 * self.n):
             eps = np.reshape(chi_predict[i] - self.x, (self.n, 1))
             self.p += eps @ np.transpose(eps)
-        self.p /= 2
+        self.p /= 2 * self.n
         g = evaluate_g()
-        self.p += g() @ evaluate_g() @ np.transpose(g)
+        self.p += g @ evaluate_q() @ np.transpose(g)
 
     def update(self, y=None):
         if y is None:
@@ -60,9 +61,9 @@ class DiscreteTimeCKF:
             p_xy += chi_x @ np.transpose(gamma_y)
         p_yy /= 2 * self.n
         p_yy += evaluate_r()
-        p_xy /= 2
+        p_xy /= 2 * self.n
 
         k = p_xy @ npl.pinv(p_yy)
         self.x += k @ (y - y_pred)
-        self.p += k @ p_yy @ np.transpose(k)
+        self.p -= k @ p_yy @ np.transpose(k)
         self.y = evaluate_h(self.x)
